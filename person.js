@@ -30,10 +30,10 @@ function syncUsers() {
     bindSync(user, passwd);
 
 
-    var base = Meteor.settings.user.base;
+    var base = Meteor.settings.base;
     var opts = {
-        filter:Meteor.settings.user.filter,
-        scope:Meteor.settings.user.sub,
+        filter:Meteor.settings.filter,
+        scope:Meteor.settings.sub,
         attributes: ['dn', 'cn', 'title', 'sn', 'givenName', 'Division', 'manager', 'displayName', 'photo', 'uid', 'mail'],
         timeLimit: 60
     };
