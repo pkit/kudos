@@ -33,7 +33,7 @@ function syncUsers() {
     var base = Meteor.settings.base;
     var opts = {
         filter:Meteor.settings.filter,
-        scope:Meteor.settings.sub,
+        scope:Meteor.settings.scope,
         attributes: ['dn', 'cn', 'title', 'sn', 'givenName', 'Division', 'manager', 'displayName', 'photo', 'uid', 'mail'],
         timeLimit: 60
     };
