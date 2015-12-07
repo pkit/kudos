@@ -3,19 +3,19 @@ var kudosIncrement = 5;
 function getKudosList(personSelected){
     var kudosLimit = Session.get("itemsLimit");
     if (personSelected == null){
-        return kudos.find({}, { limit : kudosLimit }, { orderby : { date : -1 }});
+        return kudos.find({}, { limit : kudosLimit, sort: {date: 1}});
     }
     else {
-        return kudos.find({to:personSelected.email}, { limit : kudosLimit }, { orderby : { date : -1 }});
+        return kudos.find({to:personSelected.email}, { limit : kudosLimit, sort: {date: 1}});
     }
 };
 
 function getKudosCount(personSelected){
     if (personSelected == null){
-        return kudos.find({}, { orderby : { date : 1 }}).count();
+        return kudos.find({}).count();
     }
     else {
-        return kudos.find({to:personSelected.email}, { orderby : { date : 1 }}).count();
+        return kudos.find({to:personSelected.email}).count();
     }
 }
 
@@ -32,6 +32,7 @@ if (Meteor.isClient) {
     Session.setDefault('itemsLimit', kudosIncrement);
 
 /*
+    //use without autopublish
     Deps.autorun(function() {
         console.log('start kudos');
         Meteor.subscribe('kudos', Session.get('itemsLimit'));
@@ -86,7 +87,6 @@ if (Meteor.isClient) {
             return Meteor.user();
         },
         "rackUsersReady":function(){
-            console.log(rackUsers.find().count());
             if (rackUsers.find().count() == 0){
                 return true;
             }
@@ -192,6 +192,7 @@ if (Meteor.isClient) {
 
 if (Meteor.isServer) {
 /*
+    //use without autopublish
     Meteor.publish('kudos', function(limit) {
         return kudos.find({}, { limit: limit });
     });
