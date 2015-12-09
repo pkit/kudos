@@ -4,7 +4,6 @@ if (Meteor.isClient) {
             event.preventDefault();
         },
         "autocompleteselect input": function(event, template, doc) {
-            console.log("selected ", doc);
             Session.set('selectedPerson', doc);
         }
     });
@@ -18,6 +17,7 @@ if (Meteor.isClient) {
             {
               // token: '',
               collection: 'rackUsers',
+              subscription: 'ldapUsers',
               field: 'fullName',
               matchAll: true,
               template: Template.userPill
@@ -30,5 +30,8 @@ if (Meteor.isClient) {
 
 
 if (Meteor.isServer) {
-    // server code goes here
+  Meteor.publish("ldapUsers", function(selector, options) {
+    Autocomplete.publishCursor(rackUsers.find(selector, options), this);
+    this.ready();
+  });
 }
