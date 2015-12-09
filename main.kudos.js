@@ -3,10 +3,10 @@ var kudosIncrement = 5;
 function getKudosList(personSelected){
     var kudosLimit = Session.get("itemsLimit");
     if (personSelected == null){
-        return kudos.find({}, { limit : kudosLimit, sort: {date: 1}});
+        return kudos.find({}, { limit : kudosLimit, sort: {date: -1}});
     }
     else {
-        return kudos.find({to:personSelected.email}, { limit : kudosLimit, sort: {date: 1}});
+        return kudos.find({to:personSelected.email}, { limit : kudosLimit, sort: {date: -1}});
     }
 }
 
@@ -193,9 +193,9 @@ if (Meteor.isServer) {
 
     Meteor.publish('kudos', function(person, limit) {
         if (person) {
-            kudos.find({to:person.email}, { limit : limit, sort: {date: 1}});
+            kudos.find({to:person.email}, { limit : limit, sort: {date: -1}});
         } else {
-            return kudos.find({}, { limit : limit, sort: {date: 1}});
+            return kudos.find({}, { limit : limit, sort: {date: -1}});
         }
     });
 
@@ -209,14 +209,21 @@ if (Meteor.isServer) {
 
     var loggedIn = function(userId, doc) {
         var user = Meteor.users.findOne({_id: userId});
-        return doc && doc.from === user.services.saml2.email;
+        if (doc && doc.from === user.services.saml2.email) {
+            doc.date = new Date();
+            return true;
+        }
+        return false;
     };
 
     var canComment = function(userId, doc, fields, modifier) {
         var user = Meteor.users.findOne({_id: userId});
-        return (modifier.$push != null)
-          && (modifier.$push.comments != null)
-          && (modifier.$push.comments.author === user.services.saml2.email);
+        if (modifier.$push != null && modifier.$push.comments != null
+          && modifier.$push.comments.author === user.services.saml2.email) {
+            modifier.$push.comments.date = new Date();
+            return true;
+        }
+        return false;
     };
 
     kudos.allow({
