@@ -87,15 +87,6 @@
                 </div>
             </nav>
 
-            {{#if rackUsersReady}}
-                <div align="center">
-                    <h2 align="center">
-                        Please wait
-                    </h2>
-                    <i class="fa fa-spinner fa-pulse fa-5x fa-fw margin-bottom"></i>
-                </div>
-            {{/if}}
-
             {{#if currentUser}}
                 {{> listkudos}}
                 {{#if showEditKudos}}
@@ -106,27 +97,21 @@
                         </button>
                     </div>
                 {{/if}}
-                {{#unless rackUsersReady}}
-                    <div>
-                        <h2>{{kudosTitle}}</h2>
-                    </div>
-                {{/unless}}
+                <div>
+                    <h2>{{kudosTitle}}</h2>
+                </div>
                 <div class="list-group" ower>
-                    {{#unless rackUsersReady}}
-                        {{#each media_obj}}
-                            {{> Template.dynamic template="kudosItem"}}
-                        {{/each}}
-                    {{/unless}}
+                    {{#each media_obj}}
+                        {{> Template.dynamic template="kudosItem"}}
+                    {{/each}}
                 </div>
 
                 {{#if moreKudos}}
-                    {{#unless rackUsersReady}}
-                        <div id="showMoreResults" style="margin-left: 25px;">
-                            <button type="button" id="moreKudosButton" data-loading-text="Loading..." class="btn btn-primary" autocomplete="off">
-                                Show {{kudosIncrement}} more kudos
-                            </button>
-                        </div>
-                    {{/unless}}
+                    <div id="showMoreResults" style="margin-left: 25px;">
+                        <button type="button" id="moreKudosButton" data-loading-text="Loading..." class="btn btn-primary" autocomplete="off">
+                            Show {{kudosIncrement}} more kudos
+                        </button>
+                    </div>
                 {{/if}}
             {{/if}}
         </div>

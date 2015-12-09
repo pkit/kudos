@@ -8,7 +8,7 @@ function getKudosList(personSelected){
     else {
         return kudos.find({to:personSelected.email}, { limit : kudosLimit, sort: {date: 1}});
     }
-};
+}
 
 function getKudosCount(personSelected){
     if (personSelected == null){
@@ -31,20 +31,7 @@ if (Meteor.isClient) {
 
     Session.setDefault('itemsLimit', kudosIncrement);
 
-/*
-    //use without autopublish
-    Deps.autorun(function() {
-        console.log('start kudos');
-        Meteor.subscribe('kudos', Session.get('itemsLimit'));
-        console.log('end kudos');
-    });
-
-    Deps.autorun(function() {
-        console.log('start rackUsers');
-        Meteor.subscribe('rackUsers');
-        console.log('end rackUsers');
-    });
-*/
+    Meteor.subscribe('userData');
 
     Session.set('showComments',false);
     Session.set('buttonId','');
@@ -55,10 +42,12 @@ if (Meteor.isClient) {
     Template.registerHelper('formatDate', function(date) {
         var d = new Date(date);
         var m = "0" + (parseInt(d.getMonth()) + 1);
-
-//        return d.getDate() + "-" + m.substr(m.length-2) + "-" + d.getFullYear() + ' ' + d.getHours() + ":" + d.getMinutes() + ":"+ d.getSeconds();
         return d.getDate() + "-" + m.substr(m.length-2) + "-" + d.getFullYear();
     });
+
+    Template.mediaItems.created = function () {
+        Meteor.subscribe('kudos', Session.get('selectedPerson'), Session.get("itemsLimit"));
+    };
 
     Template.mediaItems.helpers({
         "media_obj":function(){
@@ -86,14 +75,6 @@ if (Meteor.isClient) {
         "currentUser":function(){
             return Meteor.user();
         },
-        "rackUsersReady":function(){
-            if (rackUsers.find().count() == 0){
-                return true;
-            }
-            else{
-                return false;
-            }
-        },
         "moreKudos":function(){
             return getKudosCount(Session.get('selectedPerson')) > Session.get("itemsLimit");
         },
@@ -107,6 +88,7 @@ if (Meteor.isClient) {
             event.preventDefault();
         },
         "click #addKudosButton":function(event){
+            event.preventDefault();
             var kudosText = $('#kudosText').val();
             if (kudosText.length != 0){
                 var user_to = Session.get('selectedPerson');
@@ -121,15 +103,21 @@ if (Meteor.isClient) {
             $('#kudosText').val(null);
         },
         "click #homePage":function(event){
+            event.preventDefault();
             Session.set('selectedPerson', null);
             Session.set('itemsLimit', kudosIncrement);
             $('#users').val(null);
-
         },
         "click #moreKudosButton":function (event){
+            event.preventDefault();
             showMoreVisible();
         }
     });
+
+    Template.kudosItem.created = function() {
+        Meteor.subscribe('rackUser', this.data.from);
+        Meteor.subscribe('rackUser', this.data.to);
+    };
 
     Template.kudosItem.helpers({
         "users":function(){
@@ -153,11 +141,10 @@ if (Meteor.isClient) {
             event.preventDefault();
         },
         'click':function(event){
+            event.preventDefault();
             var objHash = event.target.hash;
             if (objHash != null){
-
                 if (objHash.indexOf('commentLink') != -1){
-
                     if (Session.get('buttonId') == event.currentTarget.id)
                         Session.set('buttonId', null);
                     else
@@ -165,14 +152,22 @@ if (Meteor.isClient) {
                 }
                 if (objHash.indexOf('userLink') != -1)
                 {
-                    Session.set('selectedPerson', rackUsers.findOne({email:event.currentTarget.id}));
+                    Session.set('selectedPerson',
+                      rackUsers.findOne({email:event.currentTarget.id}));
                 }
             }
         },
         "click #addCommentButton":function(event){
+            event.preventDefault();
             var commentText = $('#commentText').val();
             if (commentText.length != 0)
-                kudos.update({_id:this._id}, {$push:{comments :{author:Meteor.user().services.saml2.email, date:Date(), text:commentText}}});
+                kudos.update({_id:this._id}, {$push:{
+                    comments :{
+                        author:Meteor.user().services.saml2.email,
+                        date:new Date(),
+                        text:commentText
+                    }
+                }});
             $('#commentText').val(null);
         }
     });
@@ -183,21 +178,50 @@ if (Meteor.isClient) {
         }
     });
 
+    Template.comment.created = function() {
+        Meteor.subscribe('rackUser', this.data.author);
+    };
+
     Template.comment.helpers({
         "comment_author":function(){
             return rackUsers.findOne({email:this.author});
-        },
+        }
     });
 }
 
 if (Meteor.isServer) {
-/*
-    //use without autopublish
-    Meteor.publish('kudos', function(limit) {
-        return kudos.find({}, { limit: limit });
+
+    Meteor.publish('kudos', function(person, limit) {
+        if (person) {
+            kudos.find({to:person.email}, { limit : limit, sort: {date: 1}});
+        } else {
+            return kudos.find({}, { limit : limit, sort: {date: 1}});
+        }
     });
-    Meteor.publish('rackUsers', function(){
-        return rackUsers.find({});
+
+    Meteor.publish("userData", function () {
+        return Meteor.users.find({_id: this.userId});
     });
-*/
+
+    Meteor.publish("rackUser", function (email) {
+        return rackUsers.find({email:email});
+    });
+
+    var loggedIn = function(userId, doc) {
+        var user = Meteor.users.findOne({_id: userId});
+        return doc && doc.from === user.services.saml2.email;
+    };
+
+    var canComment = function(userId, doc, fields, modifier) {
+        var user = Meteor.users.findOne({_id: userId});
+        return (modifier.$push != null)
+          && (modifier.$push.comments != null)
+          && (modifier.$push.comments.author === user.services.saml2.email);
+    };
+
+    kudos.allow({
+        insert: loggedIn,
+        update: canComment,
+        remove: loggedIn
+    });
 }
