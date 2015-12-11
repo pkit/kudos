@@ -94,10 +94,10 @@ function syncFromFile() {
                 result = null;
             }
         });
-        setTimeout(syncFromFile, 3 * 60 * 60 * 1000);
     } catch (err) {
         Log.error(err);
     }
+    setTimeout(syncFromFile, 3 * 60 * 60 * 1000);
 }
 
 if (Meteor.isServer) {
