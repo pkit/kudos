@@ -65,13 +65,45 @@ function syncUsers() {
 
         setTimeout(syncUsers, 3 * 60 * 60 * 1000);
     } catch (err) {
-        Log.err(err);
+        Log.error(err);
+    }
+}
+
+function syncFromFile() {
+    try {
+        Assets.getText('ldap.json', function (err, res) {
+            if (err) {
+                Log.error(err);
+            } else {
+                var result = JSON.parse(res);
+                var len = result.length;
+                for (var i = 0; i < len; i++) {
+                    var user = {
+                        'uid': result[i].uid,
+                        'email': result[i].mail.toLowerCase(),
+                        'firstName': result[i].givenName,
+                        'lastName': result[i].sn,
+                        'fullName': result[i].displayName,
+                        'title': result[i].title,
+                        'photo': result[i].photo,
+                        'department': result[i].Division
+                    };
+                    rackUsers.upsert({email: user.email}, {$set: user}, function() {});
+                }
+                Log.info('Loaded ' + len + ' entries from ldap.json');
+                result = null;
+            }
+        });
+        setTimeout(syncFromFile, 3 * 60 * 60 * 1000);
+    } catch (err) {
+        Log.error(err);
     }
 }
 
 if (Meteor.isServer) {
     Meteor.methods({
-        'syncUsers': syncUsers
+        'syncUsers': syncUsers,
+        'syncFromFile': syncFromFile
     });
-    syncUsers();
+    syncFromFile();
 }
