@@ -7,18 +7,19 @@ if (Meteor.isClient) {
 }
 
 var ldap = Meteor.npmRequire('ldapjs');
-var client = ldap.createClient({
-    url:Meteor.settings.url
-});
-
-var syncLdapClient = {
-    bind: Async.wrap(client, 'bind'),
-    search: Async.wrap(client, 'search'),
-    unbind: Async.wrap(client, 'unbind')
-};
 
 function syncUsers() {
     try {
+        var client = ldap.createClient({
+            url:Meteor.settings.url
+        });
+
+        var syncLdapClient = {
+            bind: Async.wrap(client, 'bind'),
+            search: Async.wrap(client, 'search'),
+            unbind: Async.wrap(client, 'unbind')
+        };
+
         var user = Meteor.settings.user;
         var passwd = Meteor.settings.passwd;
 
@@ -62,11 +63,11 @@ function syncUsers() {
             syncLdapClient.unbind();
             done = true;
         }));
-
-        setTimeout(syncUsers, 3 * 60 * 60 * 1000);
+        client.destroy();
     } catch (err) {
         Log.error(err);
     }
+    setTimeout(syncUsers, 3 * 60 * 60 * 1000);
 }
 
 function syncFromFile() {
@@ -105,5 +106,5 @@ if (Meteor.isServer) {
         'syncUsers': syncUsers,
         'syncFromFile': syncFromFile
     });
-    syncFromFile();
+    syncUsers();
 }
